@@ -5,6 +5,7 @@ import com.google.gson.reflect.TypeToken;
 import com.thanglv.sharedataapi.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,6 +20,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -33,15 +35,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authorization != null) {
             try {
                 Jws<Claims> claimsJws = jwtUtil.parseToken(authorization);
-                String username = claimsJws.getPayload().getSubject();
-                String roleString = claimsJws.getPayload().get("ROLE", String.class);
-                List<SimpleGrantedAuthority> authorities = gson.fromJson(roleString, new TypeToken<List<SimpleGrantedAuthority>>() {});
-                UsernamePasswordAuthenticationToken userToken = UsernamePasswordAuthenticationToken.authenticated(username, null, authorities);
-                SecurityContextHolder.getContext().setAuthentication(userToken);
-                filterChain.doFilter(request, response);
-            } catch (Exception e) {
-                e.printStackTrace();
+                // invalid token type
+                if (!"access_token".equals(claimsJws.getHeader().getType())) {
+                    response.setStatus(HttpStatus.UNAUTHORIZED.value());
+                } else {
+                    String username = claimsJws.getPayload().getSubject();
+                    String roleString = claimsJws.getPayload().get("role", String.class);
+                    List<SimpleGrantedAuthority> authorities = gson.fromJson(roleString, new TypeToken<List<String>>() {}).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                    UsernamePasswordAuthenticationToken userToken = UsernamePasswordAuthenticationToken.authenticated(username, null, authorities);
+                    SecurityContextHolder.getContext().setAuthentication(userToken);
+                    filterChain.doFilter(request, response);
+                }
+            } catch (JwtException e) {
                 response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            } catch (Exception e) {
+                response.setStatus(HttpStatus.INTERNAL_SERVER_ERROR.value());
             }
         } else
             filterChain.doFilter(request, response);
