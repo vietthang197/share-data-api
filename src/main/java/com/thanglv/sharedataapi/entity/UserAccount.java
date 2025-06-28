@@ -5,8 +5,10 @@ import lombok.Setter;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
+import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
 import java.time.Instant;
+import java.util.List;
 
 @Document(collection = "user_account")
 @Getter
@@ -23,5 +25,8 @@ public class UserAccount {
     private String lastName;
     private Instant createdAt;
     private Instant updatedAt;
+
+    @DocumentReference
+    private List<UserRole> roles;
     private String isLock;
 }

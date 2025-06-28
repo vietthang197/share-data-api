@@ -2,6 +2,7 @@ package com.thanglv.sharedataapi.filter;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.thanglv.sharedataapi.util.Constant;
 import com.thanglv.sharedataapi.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
@@ -36,7 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             try {
                 Jws<Claims> claimsJws = jwtUtil.parseToken(authorization);
                 // invalid token type
-                if (!"access_token".equals(claimsJws.getHeader().getType())) {
+                if (!Constant.TOKEN_TYPE_ACCESS.equals(claimsJws.getHeader().getType())) {
                     response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 } else {
                     String username = claimsJws.getPayload().getSubject();

@@ -6,7 +6,7 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class LoginResponse {
+public class LoginResponse extends BaseResponse {
     private String accessToken;
     private String refreshToken;
 }

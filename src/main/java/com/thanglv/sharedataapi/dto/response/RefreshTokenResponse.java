@@ -6,6 +6,6 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class RefreshTokenResponse {
+public class RefreshTokenResponse extends BaseResponse {
     private String accessToken;
 }

@@ -3,11 +3,15 @@ package com.thanglv.sharedataapi.controller;
 import com.thanglv.sharedataapi.dto.request.LoginRequest;
 import com.thanglv.sharedataapi.dto.request.RefreshTokenRequest;
 import com.thanglv.sharedataapi.dto.request.RegisterAccountRequest;
+import com.thanglv.sharedataapi.dto.response.BaseResponse;
 import com.thanglv.sharedataapi.dto.response.LoginResponse;
 import com.thanglv.sharedataapi.dto.response.RefreshTokenResponse;
 import com.thanglv.sharedataapi.entity.Note;
 import com.thanglv.sharedataapi.entity.UserAccount;
+import com.thanglv.sharedataapi.entity.UserRole;
 import com.thanglv.sharedataapi.repository.UserAccountRepository;
+import com.thanglv.sharedataapi.repository.UserRoleRepository;
+import com.thanglv.sharedataapi.services.UserAccountService;
 import com.thanglv.sharedataapi.util.JwtUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -38,60 +42,20 @@ public class AuthController {
 
     private final AuthenticationManager authenticationManager;
     private final JwtUtil jwtUtil;
-    private final UserAccountRepository userAccountRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final UserAccountService userAccountService;
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken.unauthenticated(request.getEmail(), request.getPassword());
-        Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
-        if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated()) {
-            LoginResponse response = new LoginResponse();
-            response.setAccessToken(jwtUtil.generateAccessToken((User) authentication.getPrincipal()));
-            response.setRefreshToken(jwtUtil.generateRefreshToken((User) authentication.getPrincipal()));
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
+        return userAccountService.login(request);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<String> doRegister(@RequestBody RegisterAccountRequest request) {
-        Optional<UserAccount> accountOptional = userAccountRepository.findByEmail(request.getEmail().toLowerCase());
-        if (accountOptional.isPresent()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Account exists!");
-        }
-
-        UserAccount userAccount = new UserAccount();
-        userAccount.setEmail(request.getEmail().toLowerCase());
-        userAccount.setPassword(passwordEncoder.encode(request.getPassword()));
-        userAccount.setIsLock("N");
-
-        userAccountRepository.save(userAccount);
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+    public ResponseEntity<BaseResponse> doRegister(@RequestBody RegisterAccountRequest request) {
+        return userAccountService.registerAccount(request);
     }
 
     @PostMapping("/refresh-token")
     public ResponseEntity<RefreshTokenResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
-        try {
-            Jws<Claims> claimsJws = jwtUtil.parseToken(request.getRefreshToken());
-            if (!"refresh_token".equals(claimsJws.getHeader().getType())) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-            Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(claimsJws.getPayload().getSubject());
-            if (userAccountOptional.isPresent()) {
-                UserAccount userAccount = userAccountOptional.get();
-                User user = new User(userAccount.getEmail(), userAccount.getPassword(), List.of(new SimpleGrantedAuthority("USER")));
-                RefreshTokenResponse response = new RefreshTokenResponse();
-                response.setAccessToken(jwtUtil.generateAccessToken(user));
-                return ResponseEntity.ok(response);
-            } else {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-            }
-        } catch (JwtException e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        }
+        return userAccountService.refreshToken(request);
     }
 }
