@@ -21,8 +21,6 @@ public class UserAccount {
     @Indexed(unique = true)
     private String email;
     private String password;
-    private String firstName;
-    private String lastName;
     private Instant createdAt;
     private Instant updatedAt;
 

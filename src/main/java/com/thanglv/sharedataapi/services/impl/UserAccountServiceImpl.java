@@ -21,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -28,8 +29,10 @@ import org.springframework.security.core.userdetails.User;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -47,6 +50,7 @@ public class UserAccountServiceImpl implements UserAccountService {
         BaseResponse response = new BaseResponse();
         if (accountOptional.isPresent()) {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
+            response.setMessage("Email already in use");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
         UserAccount userAccount = new UserAccount();
@@ -55,8 +59,10 @@ public class UserAccountServiceImpl implements UserAccountService {
         Optional<UserRole> userRole = userRoleRepository.findByRole(Constant.DEFAULT_USER_ROLE);
         userRole.ifPresent(role -> userAccount.setRoles(List.of(role)));
         userAccount.setIsLock(Constant.STR_N);
+        userAccount.setCreatedAt(Instant.now());
         userAccountRepository.save(userAccount);
         response.setStatus(HttpStatus.CREATED.value());
+        response.setMessage("Account created!");
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 
@@ -71,7 +77,11 @@ public class UserAccountServiceImpl implements UserAccountService {
             Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(claimsJws.getPayload().getSubject());
             if (userAccountOptional.isPresent()) {
                 UserAccount userAccount = userAccountOptional.get();
-                User user = new User(userAccount.getEmail(), userAccount.getPassword(), List.of(new SimpleGrantedAuthority("USER")));
+                User user = new User(userAccount.getEmail(), userAccount.getPassword(),
+                        userAccount.getRoles().stream()
+                                .map(UserRole::getRole)
+                                .map(SimpleGrantedAuthority::new).collect(Collectors.toList())
+                );
                 response.setAccessToken(jwtUtil.generateAccessToken(user));
                 response.setStatus(HttpStatus.OK.value());
                 return ResponseEntity.ok(response);
@@ -92,16 +102,22 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Override
     public ResponseEntity<LoginResponse> login(LoginRequest request) {
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken.unauthenticated(request.getEmail(), request.getPassword());
-        Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
-        if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated()) {
-            LoginResponse response = new LoginResponse();
-            response.setAccessToken(jwtUtil.generateAccessToken((User) authentication.getPrincipal()));
-            response.setRefreshToken(jwtUtil.generateRefreshToken((User) authentication.getPrincipal()));
-            response.setStatus(HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        LoginResponse response = new LoginResponse();
+        try {
+            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken.unauthenticated(request.getEmail(), request.getPassword());
+            Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
+            if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated()) {
+                response.setAccessToken(jwtUtil.generateAccessToken((User) authentication.getPrincipal()));
+                response.setRefreshToken(jwtUtil.generateRefreshToken((User) authentication.getPrincipal()));
+                response.setStatus(HttpStatus.OK.value());
+                return ResponseEntity.ok(response);
+            } else {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+        } catch (BadCredentialsException e) {
+            response.setStatus(HttpStatus.UNAUTHORIZED.value());
+            response.setMessage("Bad credentials");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         }
     }
 }

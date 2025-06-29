@@ -8,4 +8,5 @@ public interface Constant {
     String ROLE_CLAIM = "role";
     String ACCESS_TOKEN_SECRET_KEY = "access_token.secret";
     String STR_N = "N";
+    String AUTHORIZATION_HEADER = "Authorization";
 }

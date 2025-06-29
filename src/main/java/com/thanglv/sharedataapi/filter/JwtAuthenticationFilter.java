@@ -32,7 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        String authorization = request.getHeader("Authorization");
+        String authorization = request.getHeader(Constant.AUTHORIZATION_HEADER);
         if (authorization != null) {
             try {
                 Jws<Claims> claimsJws = jwtUtil.parseToken(authorization);
@@ -41,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 } else {
                     String username = claimsJws.getPayload().getSubject();
-                    String roleString = claimsJws.getPayload().get("role", String.class);
+                    String roleString = claimsJws.getPayload().get(Constant.ROLE_CLAIM, String.class);
                     List<SimpleGrantedAuthority> authorities = gson.fromJson(roleString, new TypeToken<List<String>>() {}).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
                     UsernamePasswordAuthenticationToken userToken = UsernamePasswordAuthenticationToken.authenticated(username, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(userToken);

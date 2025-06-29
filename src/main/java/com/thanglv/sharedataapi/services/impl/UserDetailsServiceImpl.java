@@ -1,6 +1,7 @@
 package com.thanglv.sharedataapi.services.impl;
 
 import com.thanglv.sharedataapi.entity.UserAccount;
+import com.thanglv.sharedataapi.entity.UserRole;
 import com.thanglv.sharedataapi.repository.UserAccountRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,6 +28,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             throw new UsernameNotFoundException("User does not exist");
         }
         UserAccount userAccount = userAccountOptional.get();
-        return new User(userAccount.getEmail(), userAccount.getPassword(), List.of(new SimpleGrantedAuthority("USER")));
+        return new User(userAccount.getEmail(), userAccount.getPassword(), userAccount.getRoles().stream().map(UserRole::getRole).map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
     }
 }

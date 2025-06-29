@@ -33,7 +33,7 @@ public class JwtUtil {
                 .header().type(Constant.TOKEN_TYPE_ACCESS).and()
                 .subject(account.getUsername())
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + 86400))
+                .expiration(new Date(now.getTime() + 300000L))
                 .signWith(Keys.hmacShaKeyFor(Objects.requireNonNull(environment.getProperty(Constant.ACCESS_TOKEN_SECRET_KEY)).getBytes(StandardCharsets.UTF_8)))
                 .claim(Constant.ROLE_CLAIM, gson.toJson(roles))
                 .compact();
@@ -49,7 +49,7 @@ public class JwtUtil {
                 .header().type(Constant.TOKEN_TYPE_REFRESH).and()
                 .subject(account.getUsername())
                 .issuedAt(now)
-                .expiration(new Date(now.getTime() + 86400))
+                .expiration(new Date(now.getTime() + 2592000000L)) // 30 days
                 .signWith(Keys.hmacShaKeyFor(Objects.requireNonNull(environment.getProperty(Constant.ACCESS_TOKEN_SECRET_KEY)).getBytes(StandardCharsets.UTF_8)))
                 .compact();
     }
