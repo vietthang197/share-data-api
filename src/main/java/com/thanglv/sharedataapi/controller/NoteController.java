@@ -1,6 +1,7 @@
 package com.thanglv.sharedataapi.controller;
 
 import com.thanglv.sharedataapi.dto.request.CreateNoteRequest;
+import com.thanglv.sharedataapi.dto.response.GenQrShareNoteResponse;
 import com.thanglv.sharedataapi.dto.response.NoteDto;
 import com.thanglv.sharedataapi.services.NoteService;
 import lombok.RequiredArgsConstructor;
@@ -23,5 +24,15 @@ public class NoteController {
     @GetMapping
     public ResponseEntity<Page<NoteDto>> getNotes(@RequestParam Integer page, @RequestParam Integer size) {
         return noteService.getNotes(page, size);
+    }
+
+    @GetMapping("/{noteId}")
+    public ResponseEntity<NoteDto> getContent(@PathVariable String noteId) {
+        return noteService.getContent(noteId);
+    }
+
+    @GetMapping("/gen-qr/{noteId}")
+    public ResponseEntity<GenQrShareNoteResponse> genQrShareNote(@PathVariable String noteId) throws Exception {
+        return noteService.genQrShareNote(noteId);
     }
 }

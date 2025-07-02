@@ -3,21 +3,19 @@ package com.thanglv.sharedataapi.entity;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import java.time.Instant;
-
-@Document(collection = "note")
+@Document(collection = "note_content")
 @Getter
 @Setter
-public class Note {
+public class NoteContent {
 
     @Id
     private String id;
 
-    private String title;
-    private Instant createdAt;
-    private Instant updatedAt;
-    private String createdBy;
-    private String updatedBy;
+    @Indexed(unique = true)
+    private String noteId;
+
+    private String content;
 }
