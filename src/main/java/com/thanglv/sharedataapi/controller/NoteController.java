@@ -22,8 +22,8 @@ public class NoteController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<NoteDto>> getNotes(@RequestParam Integer page, @RequestParam Integer size) {
-        return noteService.getNotes(page, size);
+    public ResponseEntity<Page<NoteDto>> getNotes(@RequestParam Integer page, @RequestParam Integer size, @RequestParam(required = false, name = "q") String query) {
+        return noteService.getNotes(page, size, query);
     }
 
     @GetMapping("/{noteId}")

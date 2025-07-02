@@ -14,5 +14,6 @@ import java.util.List;
 
 @Repository
 public interface NoteRepository extends MongoRepository<Note, String>, PagingAndSortingRepository<Note, String> {
+    Page<NoteDto> findDtoByCreatedByAndTitleLike(String createdBy, String query, Pageable pageable);
     Page<NoteDto> findDtoByCreatedBy(String createdBy, Pageable pageable);
 }

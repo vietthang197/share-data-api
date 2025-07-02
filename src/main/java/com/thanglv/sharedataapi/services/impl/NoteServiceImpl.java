@@ -13,6 +13,7 @@ import com.thanglv.sharedataapi.repository.UserAccountRepository;
 import com.thanglv.sharedataapi.services.NoteService;
 import com.thanglv.sharedataapi.services.QrService;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.StringUtils;
 import org.owasp.html.PolicyFactory;
 import org.owasp.html.Sanitizers;
 import org.springframework.data.domain.Page;
@@ -60,12 +61,17 @@ public class NoteServiceImpl implements NoteService {
     }
 
     @Override
-    public ResponseEntity<Page<NoteDto>> getNotes(Integer page, Integer size) {
+    public ResponseEntity<Page<NoteDto>> getNotes(Integer page, Integer size, String query) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
         if (userAccountOptional.isPresent()) {
-            Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedBy(userAccountOptional.get().getId(), PageRequest.of(page, size, Sort.by("createdAt").descending()));
-            return ResponseEntity.ok(noteDtoPage);
+            if (StringUtils.isNotEmpty(query)) {
+                Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedByAndTitleLike(userAccountOptional.get().getId(), query, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+                return ResponseEntity.ok(noteDtoPage);
+            } else {
+                Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedBy(userAccountOptional.get().getId(), PageRequest.of(page, size, Sort.by("createdAt").descending()));
+                return ResponseEntity.ok(noteDtoPage);
+            }
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
