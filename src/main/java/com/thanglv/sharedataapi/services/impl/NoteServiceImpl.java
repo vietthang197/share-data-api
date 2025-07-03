@@ -40,8 +40,9 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public ResponseEntity<NoteDto> createNote(CreateNoteRequest request) {
+        PolicyFactory policy = Sanitizers.FORMATTING;
         Note note = new Note();
-        note.setTitle(request.getTitle());
+        note.setTitle(policy.sanitize(request.getTitle()));
         note.setCreatedAt(Instant.now());
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
@@ -53,9 +54,7 @@ public class NoteServiceImpl implements NoteService {
 
         NoteContent noteContent = new NoteContent();
         noteContent.setNoteId(note.getId());
-        PolicyFactory policy = Sanitizers.FORMATTING.and(Sanitizers.LINKS).and(Sanitizers.IMAGES);
-        String safeHtml = policy.sanitize(request.getContent());
-        noteContent.setContent(safeHtml);
+        noteContent.setContent(policy.sanitize(request.getContent()));
         noteContent = noteContentRepository.save(noteContent);
         return ResponseEntity.ok(noteMapper.toDto(note));
     }
@@ -66,10 +65,10 @@ public class NoteServiceImpl implements NoteService {
         Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
         if (userAccountOptional.isPresent()) {
             if (StringUtils.isNotEmpty(query)) {
-                Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedByAndTitleLike(userAccountOptional.get().getId(), query, PageRequest.of(page, size, Sort.by("createdAt").descending()));
+                Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedByAndTitleLike(userAccountOptional.get().getId(), query, PageRequest.of(page / size, size, Sort.by("createdAt").descending()));
                 return ResponseEntity.ok(noteDtoPage);
             } else {
-                Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedBy(userAccountOptional.get().getId(), PageRequest.of(page, size, Sort.by("createdAt").descending()));
+                Page<NoteDto> noteDtoPage = noteRepository.findDtoByCreatedBy(userAccountOptional.get().getId(), PageRequest.of(page / size, size, Sort.by("createdAt").descending()));
                 return ResponseEntity.ok(noteDtoPage);
             }
         }
@@ -96,7 +95,7 @@ public class NoteServiceImpl implements NoteService {
             String base64Content = qrService.generateQRCodeImageBase64("http://localhost:4200/note/" + noteOptional.get().getId(), 200, 200);
             GenQrShareNoteResponse response = new GenQrShareNoteResponse();
             response.setQr(base64Content);
-            response.setLink("http://localhost:4200/note/");
+            response.setLink("http://localhost:4200/note/" + noteId);
             response.setMessage("OK");
             response.setStatus(HttpStatus.OK.value());
             return ResponseEntity.ok(response);
