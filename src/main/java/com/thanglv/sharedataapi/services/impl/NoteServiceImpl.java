@@ -13,9 +13,11 @@ import com.thanglv.sharedataapi.repository.UserAccountRepository;
 import com.thanglv.sharedataapi.services.NoteService;
 import com.thanglv.sharedataapi.services.QrService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j2;
 import org.apache.commons.lang3.StringUtils;
 import org.owasp.html.PolicyFactory;
 import org.owasp.html.Sanitizers;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -24,12 +26,16 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.UriComponentsBuilder;
 
+import java.net.URI;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@Log4j2
 public class NoteServiceImpl implements NoteService {
 
     private final NoteRepository noteRepository;
@@ -37,6 +43,9 @@ public class NoteServiceImpl implements NoteService {
     private final UserAccountRepository userAccountRepository;
     private final NoteContentRepository noteContentRepository;
     private final QrService qrService;
+
+    @Value("${frontend_domain}")
+    private String frontendDomain;
 
     @Override
     public ResponseEntity<NoteDto> createNote(CreateNoteRequest request) {
@@ -92,10 +101,13 @@ public class NoteServiceImpl implements NoteService {
     public ResponseEntity<GenQrShareNoteResponse> genQrShareNote(String noteId) throws Exception {
         Optional<Note> noteOptional = noteRepository.findById(noteId);
         if (noteOptional.isPresent()) {
-            String base64Content = qrService.generateQRCodeImageBase64("http://localhost:4200/note/" + noteOptional.get().getId(), 200, 200);
+            URI uri = new URI(frontendDomain);
+            uri = uri.resolve("/note/").resolve(noteId);
+            String shareLink = uri.toString();
+            String base64Content = qrService.generateQRCodeImageBase64( shareLink, 200, 200);
             GenQrShareNoteResponse response = new GenQrShareNoteResponse();
             response.setQr(base64Content);
-            response.setLink("http://localhost:4200/note/" + noteId);
+            response.setLink(shareLink);
             response.setMessage("OK");
             response.setStatus(HttpStatus.OK.value());
             return ResponseEntity.ok(response);
