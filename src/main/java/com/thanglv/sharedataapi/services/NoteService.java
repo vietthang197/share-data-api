@@ -1,6 +1,7 @@
 package com.thanglv.sharedataapi.services;
 
 import com.thanglv.sharedataapi.dto.request.CreateNoteRequest;
+import com.thanglv.sharedataapi.dto.response.BaseResponse;
 import com.thanglv.sharedataapi.dto.response.GenQrShareNoteResponse;
 import com.thanglv.sharedataapi.dto.response.NoteDto;
 import org.springframework.data.domain.Page;
@@ -14,4 +15,8 @@ public interface NoteService {
     ResponseEntity<NoteDto> getContent(String noteId);
 
     ResponseEntity<GenQrShareNoteResponse> genQrShareNote(String noteId) throws Exception;
+
+    ResponseEntity<BaseResponse> deleteNote(String noteId);
+
+    ResponseEntity<NoteDto> updateNote(String noteId, CreateNoteRequest request);
 }

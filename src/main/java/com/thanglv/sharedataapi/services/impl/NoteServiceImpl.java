@@ -1,6 +1,7 @@
 package com.thanglv.sharedataapi.services.impl;
 
 import com.thanglv.sharedataapi.dto.request.CreateNoteRequest;
+import com.thanglv.sharedataapi.dto.response.BaseResponse;
 import com.thanglv.sharedataapi.dto.response.GenQrShareNoteResponse;
 import com.thanglv.sharedataapi.dto.response.NoteDto;
 import com.thanglv.sharedataapi.entity.Note;
@@ -58,7 +59,8 @@ public class NoteServiceImpl implements NoteService {
         if (userAccountOptional.isPresent()) {
             UserAccount userAccount = userAccountOptional.get();
             note.setCreatedBy(userAccount.getId());
-        };
+        }
+        ;
         note = noteRepository.save(note);
 
         NoteContent noteContent = new NoteContent();
@@ -86,31 +88,86 @@ public class NoteServiceImpl implements NoteService {
 
     @Override
     public ResponseEntity<NoteDto> getContent(String noteId) {
-        Optional<Note> noteOptional = noteRepository.findById(noteId);
-        if (noteOptional.isPresent()) {
-            Note note = noteOptional.get();
-            NoteDto noteDto = noteMapper.toDto(note);
-            Optional<NoteContent> noteContentOptional = noteContentRepository.findByNoteId(note.getId());
-            noteContentOptional.ifPresent(noteContent -> noteDto.setContent(noteContent.getContent()));
-            return ResponseEntity.ok(noteDto);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
+        if (userAccountOptional.isPresent()) {
+            UserAccount userAccount = userAccountOptional.get();
+            Optional<Note> noteOptional = noteRepository.findByIdAndCreatedBy(noteId, userAccount.getId());
+            if (noteOptional.isPresent()) {
+                Note note = noteOptional.get();
+                NoteDto noteDto = noteMapper.toDto(note);
+                Optional<NoteContent> noteContentOptional = noteContentRepository.findByNoteId(note.getId());
+                noteContentOptional.ifPresent(noteContent -> noteDto.setContent(noteContent.getContent()));
+                return ResponseEntity.ok(noteDto);
+            }
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @Override
     public ResponseEntity<GenQrShareNoteResponse> genQrShareNote(String noteId) throws Exception {
-        Optional<Note> noteOptional = noteRepository.findById(noteId);
-        if (noteOptional.isPresent()) {
-            URI uri = new URI(frontendDomain);
-            uri = uri.resolve("/note/").resolve(noteId);
-            String shareLink = uri.toString();
-            String base64Content = qrService.generateQRCodeImageBase64( shareLink, 200, 200);
-            GenQrShareNoteResponse response = new GenQrShareNoteResponse();
-            response.setQr(base64Content);
-            response.setLink(shareLink);
-            response.setMessage("OK");
-            response.setStatus(HttpStatus.OK.value());
-            return ResponseEntity.ok(response);
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
+        if (userAccountOptional.isPresent()) {
+            UserAccount userAccount = userAccountOptional.get();
+            Optional<Note> noteOptional = noteRepository.findByIdAndCreatedBy(noteId, userAccount.getId());
+            if (noteOptional.isPresent()) {
+                URI uri = new URI(frontendDomain);
+                uri = uri.resolve("/note/").resolve(noteId);
+                String shareLink = uri.toString();
+                String base64Content = qrService.generateQRCodeImageBase64(shareLink, 200, 200);
+                GenQrShareNoteResponse response = new GenQrShareNoteResponse();
+                response.setQr(base64Content);
+                response.setLink(shareLink);
+                response.setMessage("OK");
+                response.setStatus(HttpStatus.OK.value());
+                return ResponseEntity.ok(response);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @Override
+    public ResponseEntity<BaseResponse> deleteNote(String noteId) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
+        if (userAccountOptional.isPresent()) {
+            UserAccount userAccount = userAccountOptional.get();
+            Optional<Note> noteOptional = noteRepository.findByIdAndCreatedBy(noteId, userAccount.getId());
+            if (noteOptional.isPresent()) {
+                Note note = noteOptional.get();
+                noteRepository.delete(note);
+                BaseResponse response = new BaseResponse();
+                response.setStatus(HttpStatus.OK.value());
+                response.setMessage("OK");
+                return ResponseEntity.status(HttpStatus.OK).body(response);
+            }
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+    }
+
+    @Override
+    public ResponseEntity<NoteDto> updateNote(String noteId, CreateNoteRequest request) {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(auth.getName());
+        if (userAccountOptional.isPresent()) {
+            UserAccount userAccount = userAccountOptional.get();
+            Optional<Note> noteOptional = noteRepository.findByIdAndCreatedBy(noteId, userAccount.getId());
+            if (noteOptional.isPresent()) {
+                Note note = noteOptional.get();
+                note.setTitle(request.getTitle());
+                note.setUpdatedBy(userAccount.getId());
+                note.setUpdatedAt(Instant.now());
+                noteRepository.save(note);
+                Optional<NoteContent> noteContentOptional = noteContentRepository.findByNoteId(note.getId());
+                noteContentOptional.ifPresent(noteContent -> {
+                    noteContent.setContent(request.getContent());
+                    noteContentRepository.save(noteContent);
+                });
+                NoteDto noteDto = noteMapper.toDto(note);
+                noteDto.setContent(request.getContent());
+                return ResponseEntity.ok(noteDto);
+            }
         }
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }

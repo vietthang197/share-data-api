@@ -1,6 +1,7 @@
 package com.thanglv.sharedataapi.controller;
 
 import com.thanglv.sharedataapi.dto.request.CreateNoteRequest;
+import com.thanglv.sharedataapi.dto.response.BaseResponse;
 import com.thanglv.sharedataapi.dto.response.GenQrShareNoteResponse;
 import com.thanglv.sharedataapi.dto.response.NoteDto;
 import com.thanglv.sharedataapi.services.NoteService;
@@ -34,5 +35,16 @@ public class NoteController {
     @GetMapping("/gen-qr/{noteId}")
     public ResponseEntity<GenQrShareNoteResponse> genQrShareNote(@PathVariable String noteId) throws Exception {
         return noteService.genQrShareNote(noteId);
+    }
+
+
+    @DeleteMapping("/{noteId}")
+    public ResponseEntity<BaseResponse> deleteNote(@PathVariable String noteId) {
+        return noteService.deleteNote(noteId);
+    }
+
+    @PutMapping("/{noteId}")
+    public ResponseEntity<NoteDto> updateNote(@PathVariable String noteId, @RequestBody CreateNoteRequest request) {
+        return noteService.updateNote(noteId, request);
     }
 }

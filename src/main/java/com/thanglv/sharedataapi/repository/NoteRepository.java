@@ -11,9 +11,11 @@ import org.springframework.stereotype.Repository;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface NoteRepository extends MongoRepository<Note, String>, PagingAndSortingRepository<Note, String> {
     Page<NoteDto> findDtoByCreatedByAndTitleLike(String createdBy, String query, Pageable pageable);
     Page<NoteDto> findDtoByCreatedBy(String createdBy, Pageable pageable);
+    Optional<Note> findByIdAndCreatedBy(String id, String createdBy);
 }
