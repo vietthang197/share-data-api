@@ -17,17 +17,17 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class UserDetailsServiceImpl implements UserDetailsService {
+class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserAccountRepository userAccountRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(username);
+        var userAccountOptional = userAccountRepository.findByEmail(username);
         if (userAccountOptional.isEmpty()) {
             throw new UsernameNotFoundException("User does not exist");
         }
-        UserAccount userAccount = userAccountOptional.get();
+        var userAccount = userAccountOptional.get();
         return new User(userAccount.getEmail(), userAccount.getPassword(), userAccount.getRoles().stream().map(UserRole::getRole).map(SimpleGrantedAuthority::new).collect(Collectors.toList()));
     }
 }

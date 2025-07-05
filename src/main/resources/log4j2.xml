@@ -5,7 +5,7 @@
     </Properties>
     <Appenders>
         <Console name="ConsoleAppender" target="SYSTEM_OUT">
-            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss} [%t] %-5level %logger{36} - @user[%X{user}] - %msg%n"/>
         </Console>
         <RollingFile name="FileAppender" fileName="logs/app.log"
                      filePattern="logs/app-%d{yyyy-MM-dd}-%i.log">
@@ -22,6 +22,11 @@
             <AppenderRef ref="FileAppender"/>
         </AsyncRoot>
         <AsyncLogger name="com.thanglv.sharedataapi" additivity="false">
+            <AppenderRef ref="ConsoleAppender"/>
+            <AppenderRef ref="FileAppender"/>
+        </AsyncLogger>
+
+        <AsyncLogger name="dev.openfga" additivity="false">
             <AppenderRef ref="ConsoleAppender"/>
             <AppenderRef ref="FileAppender"/>
         </AsyncLogger>

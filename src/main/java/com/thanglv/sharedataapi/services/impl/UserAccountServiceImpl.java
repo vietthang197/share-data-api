@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-public class UserAccountServiceImpl implements UserAccountService {
+class UserAccountServiceImpl implements UserAccountService {
 
     private final UserAccountRepository userAccountRepository;
     private final UserRoleRepository userRoleRepository;
@@ -46,17 +46,17 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Override
     public ResponseEntity<BaseResponse> registerAccount(RegisterAccountRequest request) {
-        Optional<UserAccount> accountOptional = userAccountRepository.findByEmail(request.getEmail().toLowerCase());
-        BaseResponse response = new BaseResponse();
+        var accountOptional = userAccountRepository.findByEmail(request.getEmail().toLowerCase());
+        var response = new BaseResponse();
         if (accountOptional.isPresent()) {
             response.setStatus(HttpStatus.BAD_REQUEST.value());
             response.setMessage("Email already in use");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
         }
-        UserAccount userAccount = new UserAccount();
+        var userAccount = new UserAccount();
         userAccount.setEmail(request.getEmail().toLowerCase());
         userAccount.setPassword(passwordEncoder.encode(request.getPassword()));
-        Optional<UserRole> userRole = userRoleRepository.findByRole(Constant.DEFAULT_USER_ROLE);
+        var userRole = userRoleRepository.findByRole(Constant.DEFAULT_USER_ROLE);
         userRole.ifPresent(role -> userAccount.setRoles(List.of(role)));
         userAccount.setIsLock(Constant.STR_N);
         userAccount.setCreatedAt(Instant.now());
@@ -68,16 +68,16 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Override
     public ResponseEntity<RefreshTokenResponse> refreshToken(RefreshTokenRequest request) {
-        RefreshTokenResponse response = new RefreshTokenResponse();
+        var response = new RefreshTokenResponse();
         try {
-            Jws<Claims> claimsJws = jwtUtil.parseToken(request.getRefreshToken());
+            var claimsJws = jwtUtil.parseToken(request.getRefreshToken());
             if (!Constant.TOKEN_TYPE_REFRESH.equals(claimsJws.getHeader().getType())) {
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
-            Optional<UserAccount> userAccountOptional = userAccountRepository.findByEmail(claimsJws.getPayload().getSubject());
+            var userAccountOptional = userAccountRepository.findByEmail(claimsJws.getPayload().getSubject());
             if (userAccountOptional.isPresent()) {
-                UserAccount userAccount = userAccountOptional.get();
-                User user = new User(userAccount.getEmail(), userAccount.getPassword(),
+                var userAccount = userAccountOptional.get();
+                var user = new User(userAccount.getEmail(), userAccount.getPassword(),
                         userAccount.getRoles().stream()
                                 .map(UserRole::getRole)
                                 .map(SimpleGrantedAuthority::new).collect(Collectors.toList())
@@ -102,10 +102,10 @@ public class UserAccountServiceImpl implements UserAccountService {
 
     @Override
     public ResponseEntity<LoginResponse> login(LoginRequest request) {
-        LoginResponse response = new LoginResponse();
+        var response = new LoginResponse();
         try {
-            UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken.unauthenticated(request.getEmail(), request.getPassword());
-            Authentication authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
+            var usernamePasswordAuthenticationToken = UsernamePasswordAuthenticationToken.unauthenticated(request.getEmail(), request.getPassword());
+            var authentication = authenticationManager.authenticate(usernamePasswordAuthenticationToken);
             if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken) && authentication.isAuthenticated()) {
                 response.setAccessToken(jwtUtil.generateAccessToken((User) authentication.getPrincipal()));
                 response.setRefreshToken(jwtUtil.generateRefreshToken((User) authentication.getPrincipal()));

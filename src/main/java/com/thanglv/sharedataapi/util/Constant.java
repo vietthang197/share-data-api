@@ -9,4 +9,6 @@ public interface Constant {
     String ACCESS_TOKEN_SECRET_KEY = "access_token.secret";
     String STR_N = "N";
     String AUTHORIZATION_HEADER = "Authorization";
+
+    String USER = "user";
 }

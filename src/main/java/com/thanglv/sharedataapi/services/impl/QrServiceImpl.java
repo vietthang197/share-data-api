@@ -13,7 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.Base64;
 
 @Service
-public class QrServiceImpl implements QrService {
+class QrServiceImpl implements QrService {
 
     @Override
     public BufferedImage generateQRCodeImage(String text, int width, int height) throws Exception {

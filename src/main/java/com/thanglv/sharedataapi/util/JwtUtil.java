@@ -27,8 +27,8 @@ public class JwtUtil {
     private final Gson gson;
 
     public String generateAccessToken(User account) {
-        Date now = new Date();
-        List<String> roles = account.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
+        var now = new Date();
+        var roles = account.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList());
         return Jwts.builder()
                 .header().type(Constant.TOKEN_TYPE_ACCESS).and()
                 .subject(account.getUsername())
@@ -44,7 +44,7 @@ public class JwtUtil {
     }
 
     public String generateRefreshToken(User account) {
-        Date now = new Date();
+        var now = new Date();
         return Jwts.builder()
                 .header().type(Constant.TOKEN_TYPE_REFRESH).and()
                 .subject(account.getUsername())

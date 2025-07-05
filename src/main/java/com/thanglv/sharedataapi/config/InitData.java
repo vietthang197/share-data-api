@@ -17,9 +17,9 @@ public class InitData {
 
     @PostConstruct
     public void init() {
-         Optional<UserRole> defaultRoleOptional = userRoleRepository.findByRole(Constant.DEFAULT_USER_ROLE);
+         var defaultRoleOptional = userRoleRepository.findByRole(Constant.DEFAULT_USER_ROLE);
          if (defaultRoleOptional.isEmpty()) {
-             UserRole userRole = new UserRole();
+             var userRole = new UserRole();
              userRole.setRole(Constant.DEFAULT_USER_ROLE);
              userRoleRepository.save(userRole);
          }

@@ -5,10 +5,13 @@ import com.thanglv.sharedataapi.dto.response.BaseResponse;
 import com.thanglv.sharedataapi.dto.response.GenQrShareNoteResponse;
 import com.thanglv.sharedataapi.dto.response.NoteDto;
 import com.thanglv.sharedataapi.services.NoteService;
+import dev.openfga.sdk.errors.FgaInvalidParameterException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.concurrent.ExecutionException;
 
 @RestController
 @RequestMapping("/api/v1/note")
@@ -18,7 +21,7 @@ public class NoteController {
     private final NoteService noteService;
 
     @PostMapping
-    public ResponseEntity<NoteDto> createNote(@RequestBody CreateNoteRequest request) {
+    public ResponseEntity<NoteDto> createNote(@RequestBody CreateNoteRequest request) throws FgaInvalidParameterException, ExecutionException, InterruptedException {
         return noteService.createNote(request);
     }
 

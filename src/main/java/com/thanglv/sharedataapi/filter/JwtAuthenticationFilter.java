@@ -12,6 +12,7 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.apache.logging.log4j.ThreadContext;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -35,15 +36,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String authorization = request.getHeader(Constant.AUTHORIZATION_HEADER);
         if (authorization != null) {
             try {
-                Jws<Claims> claimsJws = jwtUtil.parseToken(authorization);
+                var claimsJws = jwtUtil.parseToken(authorization);
                 // invalid token type
                 if (!Constant.TOKEN_TYPE_ACCESS.equals(claimsJws.getHeader().getType())) {
                     response.setStatus(HttpStatus.UNAUTHORIZED.value());
                 } else {
                     String username = claimsJws.getPayload().getSubject();
+                    ThreadContext.put(Constant.USER, username);
                     String roleString = claimsJws.getPayload().get(Constant.ROLE_CLAIM, String.class);
-                    List<SimpleGrantedAuthority> authorities = gson.fromJson(roleString, new TypeToken<List<String>>() {}).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
-                    UsernamePasswordAuthenticationToken userToken = UsernamePasswordAuthenticationToken.authenticated(username, null, authorities);
+                    var authorities = gson.fromJson(roleString, new TypeToken<List<String>>() {}).stream().map(SimpleGrantedAuthority::new).collect(Collectors.toList());
+                    var userToken = UsernamePasswordAuthenticationToken.authenticated(username, null, authorities);
                     SecurityContextHolder.getContext().setAuthentication(userToken);
                     filterChain.doFilter(request, response);
                 }
