@@ -9,4 +9,6 @@ import java.util.Optional;
 @Repository
 public interface NoteContentRepository extends MongoRepository<NoteContent, String> {
     Optional<NoteContent> findByNoteId(String noteId);
+
+    int deleteByNoteId(String noteId);
 }

@@ -10,6 +10,5 @@ public interface OpenFGAConstant {
         String owner = "owner";
         String view = "view";
         String edit =  "edit";
-        String delete = "delete";
     }
 }

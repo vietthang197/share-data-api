@@ -1,14 +1,21 @@
 package com.thanglv.sharedataapi.services;
 
-import dev.openfga.sdk.api.client.model.ClientListObjectsResponse;
-import dev.openfga.sdk.api.client.model.ClientWriteRequest;
-import dev.openfga.sdk.api.client.model.ClientWriteResponse;
+import dev.openfga.sdk.api.client.model.*;
 import dev.openfga.sdk.errors.FgaInvalidParameterException;
+import dev.openfga.sdk.errors.FgaValidationError;
 
 import java.util.concurrent.ExecutionException;
 
 public interface AuthorizationService {
-    ClientWriteResponse insert(ClientWriteRequest clientWriteRequest) throws FgaInvalidParameterException, ExecutionException, InterruptedException;
+    ClientWriteResponse write(ClientWriteRequest clientWriteRequest) throws FgaInvalidParameterException, ExecutionException, InterruptedException;
 
-    ClientListObjectsResponse query() throws FgaInvalidParameterException, ExecutionException, InterruptedException;
+    ClientListObjectsResponse queryListObject(ClientListObjectsRequest clientListObjectsRequest) throws FgaInvalidParameterException, ExecutionException, InterruptedException;
+
+    ClientCheckResponse check(ClientCheckRequest request) throws FgaInvalidParameterException, ExecutionException, InterruptedException;
+
+    ClientBatchCheckResponse batchCheck(ClientBatchCheckRequest request) throws FgaInvalidParameterException, ExecutionException, InterruptedException, FgaValidationError;
+
+    ClientListUsersResponse queryListUsers(ClientListUsersRequest clientListUsersRequest) throws FgaInvalidParameterException, ExecutionException, InterruptedException;
+
+    boolean hasPermission(String userPermission, String requiredPermission);
 }
