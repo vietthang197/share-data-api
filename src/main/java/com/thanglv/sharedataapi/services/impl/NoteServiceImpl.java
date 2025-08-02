@@ -66,7 +66,7 @@ class NoteServiceImpl implements NoteService {
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<NoteDto> createNote(CreateNoteRequest request) throws FgaInvalidParameterException, ExecutionException, InterruptedException {
         log.info("@NoteServiceImpl createNote {}", request);
-        var policy = Sanitizers.FORMATTING;
+        var policy = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS).and(Sanitizers.TABLES).and(Sanitizers.STYLES);
         var note = new Note();
         note.setTitle(policy.sanitize(request.getTitle()));
         note.setCreatedAt(Instant.now());
