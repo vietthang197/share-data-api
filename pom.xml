@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.thanglv</groupId>
     <artifactId>share-data-api</artifactId>
-    <version>0.0.2-SNAPSHOT</version>
+    <version>3.0</version>
     <name>share-data-api</name>
     <description>share-data-api</description>
     <url/>
