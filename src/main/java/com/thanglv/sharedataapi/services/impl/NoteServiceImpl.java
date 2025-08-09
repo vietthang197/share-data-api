@@ -25,6 +25,8 @@ import lombok.extern.log4j.Log4j2;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tomcat.util.threads.VirtualThreadExecutor;
+import org.owasp.html.HtmlPolicyBuilder;
+import org.owasp.html.PolicyFactory;
 import org.owasp.html.Sanitizers;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
@@ -66,9 +68,9 @@ class NoteServiceImpl implements NoteService {
     @Transactional(rollbackFor = Exception.class)
     public ResponseEntity<NoteDto> createNote(CreateNoteRequest request) throws FgaInvalidParameterException, ExecutionException, InterruptedException {
         log.info("@NoteServiceImpl createNote {}", request);
-        var policy = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS).and(Sanitizers.TABLES).and(Sanitizers.STYLES);
+        var titlePolicy = Sanitizers.FORMATTING.and(Sanitizers.BLOCKS).and(Sanitizers.TABLES).and(Sanitizers.STYLES);
         var note = new Note();
-        note.setTitle(policy.sanitize(request.getTitle()));
+        note.setTitle(titlePolicy.sanitize(request.getTitle()));
         note.setCreatedAt(Instant.now());
         var auth = SecurityContextHolder.getContext().getAuthentication();
         var userAccountOptional = userAccountRepository.findByEmail(auth.getName());
@@ -81,7 +83,38 @@ class NoteServiceImpl implements NoteService {
 
         var noteContent = new NoteContent();
         noteContent.setNoteId(note.getId());
-        noteContent.setContent(request.getContent());
+        PolicyFactory contentPolicy =
+                // 1) Preset an toàn, bao phủ khối, inline, bảng, link
+                Sanitizers.FORMATTING
+                        .and(Sanitizers.BLOCKS)
+                        .and(Sanitizers.TABLES)
+                        .and(Sanitizers.LINKS)
+                        // 2) Mở rộng có kiểm soát
+                        .and(new HtmlPolicyBuilder()
+                                // Thẻ xuống dòng và code block
+                                .allowElements("br", "pre", "code")
+                                // URL chỉ cho http/https (+mailto/tel nếu cần)
+                                .allowUrlProtocols("http", "https")
+                                // Cho phép href trên <a>
+                                .allowAttributes("href").onElements("a")
+                                // Nếu muốn cho phép target, vẫn an toàn vì Sanitizer áp rel bảo vệ
+                                .allowAttributes("target").onElements("a")
+                                // Ép rel=nofollow trên links
+                                .requireRelNofollowOnLinks()
+                                // Nếu project muốn bỏ bớt noopener|noreferrer tự động khi target=_blank:
+                                // .skipRelsOnLinks("noopener", "noreferrer")
+                                //
+                                // BẢNG: nếu cần align/valign thực sự, giữ tối thiểu
+                                .allowAttributes("summary").onElements("table")
+                                .allowAttributes("align","valign")
+                                .onElements("table","tr","td","th","colgroup","col","thead","tbody","tfoot")
+                                //
+                                // STYLES: chỉ bật khi buộc phải giữ style inline từ editor
+                                // .allowStyling()
+                                .toFactory()
+                        );
+
+        noteContent.setContent(contentPolicy.sanitize(request.getContent()));
         noteContent = noteContentRepository.save(noteContent);
 
         var setOwner = new ClientWriteRequest()
