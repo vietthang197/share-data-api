@@ -81,7 +81,7 @@ class NoteServiceImpl implements NoteService {
 
         var noteContent = new NoteContent();
         noteContent.setNoteId(note.getId());
-        noteContent.setContent(policy.sanitize(request.getContent()));
+        noteContent.setContent(request.getContent());
         noteContent = noteContentRepository.save(noteContent);
 
         var setOwner = new ClientWriteRequest()
